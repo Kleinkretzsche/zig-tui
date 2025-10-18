@@ -1,14 +1,21 @@
 const std = @import("std");
+const posix = std.posix;
+const linux = @import("linux.zig");
+
+var orig_termios: std.os.linux.termios = undefined;
 
 pub fn main() !void {
-    const file = try std.fs.openFileAbsolute("/dev/pts/2", .{
-        .allow_ctty = true,
-        .mode = .read_write,
-    });
+    orig_termios = try linux.enableRawMode();
+    defer linux.disableRawMode(orig_termios);
 
-    defer file.close();
-
-    while (true) {
-        _ = try file.write(&[_]u8{ 0x1B, '[', '2', 'J' });
+    var buf: [8]u8 = undefined;
+    var n: usize = 0;
+    while (n < buf.len) : (n += 1) {
+        _ = try linux.readChars(buf[n..]);
+        if (buf[n] == '\n') {
+            break;
+        }
     }
+
+    std.debug.print("{s}\n", .{buf[0..n]});
 }

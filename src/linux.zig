@@ -1,0 +1,54 @@
+const std = @import("std");
+const posix = std.posix;
+const linux = std.os.linux;
+
+pub fn enableRawMode() !linux.termios {
+    const orig_termios = try posix.tcgetattr(posix.STDIN_FILENO);
+    var termios = orig_termios;
+
+    termios.lflag.ECHO = false; // don't echo input characters
+    termios.lflag.ICANON = false; // read input byte-by-byte instead of line-by-line
+    termios.lflag.ISIG = false; // disable Ctrl-C and Ctrl-Z signals
+    termios.iflag.IXON = false; // disable Ctrl-S and Ctrl-Q signals
+    termios.lflag.IEXTEN = false; // disable Ctrl-V
+    termios.iflag.ICRNL = false; // CTRL-M being read as CTRL-J
+    termios.oflag.OPOST = false; // disable output processing
+    termios.iflag.BRKINT = false; // break conditions cause SIGINT signal
+    termios.iflag.INPCK = false; // disable parity checking (obsolete?)
+    termios.iflag.ISTRIP = false; // disable stripping of 8th bit
+    termios.cflag.CSIZE = .CS8; // set character size to 8 bits
+    termios.cc[@intFromEnum(linux.V.MIN)] = 0; // Return immediately when any bytes are available
+    termios.cc[@intFromEnum(linux.V.TIME)] = 1; // Wait up to 0.1 seconds for input
+
+    try posix.tcsetattr(posix.STDIN_FILENO, .FLUSH, termios);
+    return orig_termios;
+}
+
+pub fn disableRawMode(termios: linux.termios) void {
+    posix.tcsetattr(posix.STDIN_FILENO, .FLUSH, termios) catch @panic("Disabling raw mode failed!");
+}
+
+pub fn winsize(wsz: *posix.winsize) usize {
+    return linux.ioctl(linux.STDOUT_FILENO, linux.T.IOCGWINSZ, @intFromPtr(wsz));
+}
+
+pub fn write(buf: []const u8) !void {
+    if (try posix.write(linux.STDOUT_FILENO, buf) != buf.len) {
+        return error.WriteIncomplete;
+    }
+}
+
+fn readChar(buf: []u8) !usize {
+    const stdin = std.posix.STDIN_FILENO;
+    return try posix.read(stdin, buf);
+}
+
+pub fn readChars(buf: []u8) !usize {
+    while (true) {
+        const n = posix.read(posix.STDIN_FILENO, buf) catch |err| switch (err) {
+            error.WouldBlock => continue,
+            else => return err,
+        };
+        if (n >= 1) return n;
+    }
+}
