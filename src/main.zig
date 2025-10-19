@@ -19,7 +19,11 @@ pub fn main() !void {
 
     _ = try linux.write(ansi.ClearScreen);
 
-    _ = try linux.write(term_buf);
+    const daniel = "hello world";
+    var i: u8 = 0;
+    while (i < daniel.len) : (i += 1) {
+        try ansi.write_char_at(20, 50 + i, daniel[i]);
+    }
 
     var buf: [1]u8 = undefined;
     while (try linux.readChars(&buf) == 1) {

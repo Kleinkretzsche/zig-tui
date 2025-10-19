@@ -37,6 +37,37 @@ pub fn getWindowSize() !t.Screen {
     return screen;
 }
 
+pub fn write_char_at(i: u8, j: u8, c: u8) !void {
+    var j_copy = j;
+    var i_copy = i;
+
+    var buf: [256]u8 = undefined;
+    var n = buf.len - 1;
+
+    buf[n] = c;
+    n -= 1;
+    buf[n] = 'H';
+
+    while (j_copy != 0) : (j_copy /= 10) {
+        n -= 1;
+        buf[n] = (j_copy % 10) + '0';
+    }
+
+    n -= 1;
+    buf[n] = ';';
+
+    while (i_copy != 0) : (i_copy /= 10) {
+        n -= 1;
+        buf[n] = (i_copy % 10) + '0';
+    }
+
+    n -= 1;
+    buf[n] = '[';
+    n -= 1;
+    buf[n] = '\x1b';
+    return try linux.write(buf[n..]);
+}
+
 pub fn getCursorPosition() !t.Screen {
     var buf: [32]u8 = undefined;
     try linux.write(WinMaximize ++ ReadCursorPos);
