@@ -41,12 +41,10 @@ pub fn getCursorPosition() !t.Screen {
     var buf: [32]u8 = undefined;
     try linux.write(WinMaximize ++ ReadCursorPos);
     var nread = try linux.readChars(&buf);
-    // we should ignore the final R character
+    // ignore the final R character
     if (buf[nread - 1] == 'R') {
         nread -= 1;
-    }
-    // not there yet? we will ignore it, but it should be there
-    else if (try linux.readChars(buf[nread..]) != 1 or buf[nread] != 'R') {
+    } else if (try linux.readChars(buf[nread..]) != 1 or buf[nread] != 'R') {
         return error.CursorError;
     }
     if (buf[0] != ESC or buf[1] != '[') return error.CursorError;
@@ -55,9 +53,7 @@ pub fn getCursorPosition() !t.Screen {
     var semicolon: bool = false;
     var digits: u8 = 0;
 
-    // no sscanf, format to read is "row;col"
-    // read it right to left, so we can read number of digits
-    // stop before the CSI, so at index 2
+    // lets not depend on sscanf :)
     var i = nread;
     while (i > 2) {
         i -= 1;
