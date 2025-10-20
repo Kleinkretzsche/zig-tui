@@ -17,6 +17,8 @@ pub fn main() !void {
 
     term_buf[win.cols * 20 + 50] = '*';
 
+    allocator.free(term_buf);
+
     _ = try linux.write(ansi.ClearScreen);
 
     const daniel = "hello world";
