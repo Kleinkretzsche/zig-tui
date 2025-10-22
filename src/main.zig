@@ -12,20 +12,21 @@ pub fn main() !void {
     const win = try ansi.getWindowSize();
 
     var term_buf = try allocator.alloc(u8, win.cols * win.rows);
+    defer allocator.free(term_buf);
 
     @memset(term_buf, ' ');
 
     term_buf[win.cols * 20 + 50] = '*';
-
-    allocator.free(term_buf);
 
     _ = try linux.write(ansi.ClearScreen);
 
     const daniel = "hello world";
     var i: u8 = 0;
     while (i < daniel.len) : (i += 1) {
-        try ansi.write_char_at(20, 50 + i, daniel[i]);
+        try ansi.write_char_at(@intCast(win.rows / 2), @intCast(win.cols / 2 - daniel.len / 2 + i), daniel[i]);
     }
+
+    try linux.write(ansi.WinMaximize);
 
     var buf: [1]u8 = undefined;
     while (try linux.readChars(&buf) == 1) {
