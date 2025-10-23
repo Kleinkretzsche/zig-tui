@@ -3,7 +3,6 @@ with import <nixpkgs> {};
 let
   unstable = import
     (builtins.fetchTarball "https://github.com/NixOS/nixpkgs/archive/nixos-unstable.tar.gz")
-    # reuse the current configuration
     { config = config; };
 in
 pkgs.mkShell {
@@ -20,4 +19,8 @@ pkgs.mkShell {
     pkg-config
     zip
   ];
+  shellHook =
+  ''
+    export ZIG_GLOBAL_CACHE_DIR=$PWD/.zig-cache
+  '';
 }
